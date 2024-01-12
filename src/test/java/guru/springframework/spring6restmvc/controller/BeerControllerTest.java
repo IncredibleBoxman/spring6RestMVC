@@ -1,9 +1,12 @@
 package guru.springframework.spring6restmvc.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.springframework.spring6restmvc.model.Beer;
 import guru.springframework.spring6restmvc.model.BeerStyle;
 import guru.springframework.spring6restmvc.services.BeerService;
 import guru.springframework.spring6restmvc.services.BeerServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -21,6 +24,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 //@SpringBootTest
@@ -30,6 +34,8 @@ class BeerControllerTest {
     // BeerController beerController;
     @Autowired
     MockMvc mockMvc;
+    @Autowired
+    ObjectMapper objectMapper;
     @MockBean
     BeerService beerService;
 
@@ -50,17 +56,40 @@ class BeerControllerTest {
         I see some reason not to.
      */
     // UDEMY COURSE WAY IS THIS: But I will do as above comment instead.
-    BeerServiceImpl beerServiceImpl = new BeerServiceImpl();
-   /* Beer testBeer = Beer.builder()
-            .id(UUID.randomUUID())
-            .beerName("My Beer Brand")
-            .beerStyle(BeerStyle.PALE_ALE)
-            .upc("beerbeer")
-            .price(new BigDecimal("12.99"))
-            .version(1)
-            .quantityOnHand(29)
-            .build();
-  */
+    BeerServiceImpl beerServiceImpl;
+
+    @BeforeEach
+    void setUp() {
+        beerServiceImpl = new BeerServiceImpl();
+    }
+
+    /* Beer testBeer = Beer.builder()
+                .id(UUID.randomUUID())
+                .beerName("My Beer Brand")
+                .beerStyle(BeerStyle.PALE_ALE)
+                .upc("beerbeer")
+                .price(new BigDecimal("12.99"))
+                .version(1)
+                .quantityOnHand(29)
+                .build();
+      */
+   @Test
+   void testCreateNewBeer() throws Exception {
+
+       Beer beer = beerServiceImpl.listBeers().get(0);
+
+       beer.setVersion(null);
+       beer.setId(null);
+
+       given(beerService.saveNewBear(any(Beer.class))).willReturn(beerServiceImpl.listBeers().get(1));
+
+       mockMvc.perform(post("/api/v1/beer")
+               .accept(MediaType.APPLICATION_JSON)
+               .contentType(MediaType.APPLICATION_JSON)
+                       .content(objectMapper.writeValueAsString(beer)))
+               .andExpect(status().isCreated())
+               .andExpect(header().exists("Location"));
+   }
    @Test
    void testListBeers() throws Exception {
        given(beerService.listBeers()).willReturn(beerServiceImpl.listBeers());
