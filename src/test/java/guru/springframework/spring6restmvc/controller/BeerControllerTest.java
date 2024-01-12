@@ -50,8 +50,8 @@ class BeerControllerTest {
         I see some reason not to.
      */
     // UDEMY COURSE WAY IS THIS: But I will do as above comment instead.
-    //BeerServiceImpl beerServiceImpl = new BeerServiceImpl();
-    Beer testBeer = Beer.builder()
+    BeerServiceImpl beerServiceImpl = new BeerServiceImpl();
+   /* Beer testBeer = Beer.builder()
             .id(UUID.randomUUID())
             .beerName("My Beer Brand")
             .beerStyle(BeerStyle.PALE_ALE)
@@ -60,10 +60,21 @@ class BeerControllerTest {
             .version(1)
             .quantityOnHand(29)
             .build();
+  */
+   @Test
+   void testListBeers() throws Exception {
+       given(beerService.listBeers()).willReturn(beerServiceImpl.listBeers());
+
+       mockMvc.perform(get("/api/v1/beer")
+               .accept(MediaType.APPLICATION_JSON))
+               .andExpect(status().isOk())
+               .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+               .andExpect(jsonPath("$.length()", is(3)));
+   }
     @Test
     void getBeerbyId() throws Exception {
         //Course way to do it but changing it.
-        //Beer testBeer = beerServiceImpl.listBeers().get(0);
+        Beer testBeer = beerServiceImpl.listBeers().get(0);
         given(beerService.getBeerById(testBeer.getId())).willReturn(testBeer);
 
         mockMvc.perform(get("/api/v1/beer/"+ testBeer.getId())
