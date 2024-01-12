@@ -1,6 +1,7 @@
 package guru.springframework.spring6restmvc.controller;
 
 import guru.springframework.spring6restmvc.model.Beer;
+import guru.springframework.spring6restmvc.model.BeerStyle;
 import guru.springframework.spring6restmvc.services.BeerService;
 import guru.springframework.spring6restmvc.services.BeerServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -11,15 +12,16 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 //@SpringBootTest
 @WebMvcTest(BeerController.class)
@@ -31,17 +33,45 @@ class BeerControllerTest {
     @MockBean
     BeerService beerService;
 
-    BeerServiceImpl beerServiceImpl = new BeerServiceImpl();
+    /* The following is probably a better practice as discussed in the question and answers section of Lesson 71.
+    Instead of using BeerServiceImpl and creating a dependency for this test, we can mock a test beer instead.
 
+    Beer testBeer = Beer.builder()
+        .beerName("My Beer Brand")
+        .beerStyle(BeerStyle.PALE_ALE)
+        .upc("beerbeer")
+        .price(new BigDecimal("12.99"))
+        .version(1)
+        .quantityOnHand(29)
+        .build();
+
+        And then use this testBeer for testing. I have to agree, this make the test only depend on its own logic
+        instead of also depending on beerserviceImpl. So I am going to change the way I am doing it to that way unless
+        I see some reason not to.
+     */
+    // UDEMY COURSE WAY IS THIS: But I will do as above comment instead.
+    //BeerServiceImpl beerServiceImpl = new BeerServiceImpl();
+    Beer testBeer = Beer.builder()
+            .id(UUID.randomUUID())
+            .beerName("My Beer Brand")
+            .beerStyle(BeerStyle.PALE_ALE)
+            .upc("beerbeer")
+            .price(new BigDecimal("12.99"))
+            .version(1)
+            .quantityOnHand(29)
+            .build();
     @Test
     void getBeerbyId() throws Exception {
-        Beer testBeer = beerServiceImpl.listBeers().get(0);
-        given(beerService.getBeerById((any(UUID.class)))).willReturn(testBeer);
+        //Course way to do it but changing it.
+        //Beer testBeer = beerServiceImpl.listBeers().get(0);
+        given(beerService.getBeerById(testBeer.getId())).willReturn(testBeer);
 
-        mockMvc.perform(get("/api/v1/beer/"+ UUID.randomUUID())
+        mockMvc.perform(get("/api/v1/beer/"+ testBeer.getId())
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id", is (testBeer.getId().toString())))
+                .andExpect(jsonPath("$.beerName", is (testBeer.getBeerName())));
 
         //System.out.println(beerController.getBeerbyId(UUID.randomUUID()));
     }
